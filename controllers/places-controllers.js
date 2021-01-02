@@ -1,7 +1,13 @@
+//uuid is for random id generator
+const { uuid } = require('uuidv4');
+const {  validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
+const getCoordsForAddress =require('../util/location');
+
+
 
 //dummy data
-const DUMMY_PLACES = [
+let DUMMY_PLACES = [
     {
         id:'p1',
         title:'Empire state buildings',
@@ -30,18 +36,94 @@ const getPlacebyId =  (req,res,next) =>{
 
 
 // this is part of search by user id and called in routes userId route
-const getPlacebyUserId =  (req,res,next) =>{
-    const placeId = req.params.pid;
-    const place = DUMMY_PLACES.find(p=> {
-        return p.id === placeId;
+const getPlacesbyUserId =  (req,res,next) =>{
+    const placeId = req.params.uid;
+    const places = DUMMY_PLACES.filter(p=> {
+        return p.creator === placeId;
     });
-    if(!place){
+    if(!places || places.length === 0){
       throw new HttpError('Could not found by user Id',404);
     }
 
-    res.json({place});  // returning data in json form
+    res.json({places});  // returning data in json form
 };
 
+// post method  async is for google api but we did't use bcz no money 
+const createPlace = async (req,res,next) =>{
+
+    //validation result shown according to rules define in routes module
+     const errors = validationResult(req);
+     if(!errors.isEmpty()){
+         return next(new HttpError('Invalid inputs passed, please check your data',422));  
+     }
+
+    //const  title = req.body.title;
+    const { title, description, address, creator } = req.body;
+    
+    // defineing for to get coords from google but we did hard code in locaton.js due to non-budget
+    let coordinates;
+    try {
+        coordinates = await getCoordsForAddress(address);
+    } catch (error) {
+        return next(error);
+    }
+
+    //data defination
+    const createPlace = {
+        id:uuid(),
+        title,
+        description,
+        location:coordinates,
+        address,
+        creator
+    };     
+  //inserting dummy data
+    DUMMY_PLACES.push(createPlace);
+    res.status(201).json({place: createPlace});
+};
+
+// api method for update
+const updatePlace = (req, res, next)=>{
+
+     //validation result shown according to rules define in routes module
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        throw new HttpError('Invalid inputs passed, please check your data',422);  
+    }
+
+    const { title, description } = req.body;
+    const placeId = req.params.pid;
+
+    const updatedPlace = {...DUMMY_PLACES.find(p=>p.id === placeId)};
+    //store index of current place in placeIndex
+    const placeIndex = DUMMY_PLACES.findIndex(p =>p.id === placeId);
+
+    //this insert the new coming data from form to copy of latest data when id matched
+    updatedPlace.title = title;
+    updatedPlace.description = description;
+
+    //update the place in Demo data which we passed at updatedPlace
+    DUMMY_PLACES[placeIndex] = updatedPlace;
+
+    res.status(200).json({place:updatedPlace});
+
+};
+
+//api method for to delet place
+const deletPlace = (req, res, next) => {
+    const placeId = req.params.pid;
+
+    //if there is no data then show no data found how can i delete if no data
+    if(!DUMMY_PLACES.find(p => p.id === placeId)){
+        throw new HttpError('Data is not found',404);
+    }
+
+    DUMMY_PLACES = DUMMY_PLACES.filter(p => p.id !== placeId);
+    res.status(200).json({message:"place is deleted"});
+};
 
 exports.getPlacebyId = getPlacebyId; // exporting function to places-routes
-exports.getPlacebyUserId = getPlacebyUserId;
+exports.getPlacesbyUserId = getPlacesbyUserId;
+exports.createPlace = createPlace;
+exports.updatePlace = updatePlace;
+exports.deletPlace = deletPlace;

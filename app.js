@@ -1,11 +1,23 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 
+const HttpError = require('./models/http-error');
 const placesRoutes = require('./routes/places-routes');
+const usersRoutes = require('./routes/users-routes');
 
 const app = express();
+app.use(bodyParser.json());
 
 app.use('/api/places',placesRoutes);  // calling api route fo place from another file
+
+app.use('/api/users',usersRoutes);
+
+//this route is for if client put wroong API link in url
+app.use((req,res,next) => {
+    const error = new HttpError('Could not found this route',404);
+    throw error;
+
+});
 
 // this is special middl wear or handler which can take 4 arguments for error only express know that middlewar
 app.use((error,req,res,next)=> {
