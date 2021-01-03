@@ -3,6 +3,7 @@ const { uuid } = require('uuidv4');
 const {  validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
 const getCoordsForAddress =require('../util/location');
+const Place = require('../models/place');
 
 
 
@@ -22,16 +23,24 @@ let DUMMY_PLACES = [
 ];
 
 // this is part of search by place id and called in routes placeId route
-const getPlacebyId =  (req,res,next) =>{
+const getPlacebyId = async (req,res,next) =>{
     const placeId = req.params.pid;
-    const place = DUMMY_PLACES.find(p=> {
-        return p.id === placeId;
-    });
+   
+    
+    let place;
+    try {
+         place = await Place.findById(placeId);
+    } catch (err) {
+        const error = new HttpError('could not find place by id ',500);
+        return next(error);
+    };
+
     if(!place){
-      throw new HttpError('Could not found Place Id',404);
+      const error = new HttpError('Could not found Place Id',404);
+      return next(error); // this is same as throw new httpError const error then next(error)
     }
 
-    res.json({place});  // returning data in json form
+    res.json({place: place.toObject({ getter:true }) });  //  getter:true  = removing underscore from id which is by default MongoDb conact
 };
 
 
@@ -68,17 +77,27 @@ const createPlace = async (req,res,next) =>{
         return next(error);
     }
 
-    //data defination
-    const createPlace = {
-        id:uuid(),
+    //coming data from form and orgainzating according to schema
+    const createPlace = new Place({
         title,
         description,
-        location:coordinates,
         address,
+        location: coordinates,
+        image:'https://picsum.photos/200/300',
         creator
-    };     
+    });
+
+    // saving data to database
+    try {
+       await createPlace.save();
+    } catch (err) {
+         const error = new HttpError('Creating place failed, please try again',500);
+         return next(error)
+    };
+    
+    
   //inserting dummy data
-    DUMMY_PLACES.push(createPlace);
+    
     res.status(201).json({place: createPlace});
 };
 
