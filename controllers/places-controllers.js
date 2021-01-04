@@ -45,16 +45,24 @@ const getPlacebyId = async (req,res,next) =>{
 
 
 // this is part of search by user id and called in routes userId route
-const getPlacesbyUserId =  (req,res,next) =>{
-    const placeId = req.params.uid;
-    const places = DUMMY_PLACES.filter(p=> {
-        return p.creator === placeId;
-    });
+const getPlacesbyUserId = async (req,res,next) =>{
+    const userId = req.params.uid;
+    
+
+    let places;
+    try {
+     places = await Place.find({ creator: userId });
+    } catch (err) {
+        const error = new HttpError('could not find place by id ',500);
+        return next(error);
+    }
+      
     if(!places || places.length === 0){
-      throw new HttpError('Could not found by user Id',404);
+      const error = new HttpError('Could not found by user Id',404);
+      return next(error);
     }
 
-    res.json({places});  // returning data in json form
+    res.json({places: places.map(place => place.toObject({ getter: true })) });  // returning data in json form
 };
 
 // post method  async is for google api but we did't use bcz no money 
@@ -102,7 +110,7 @@ const createPlace = async (req,res,next) =>{
 };
 
 // api method for update
-const updatePlace = (req, res, next)=>{
+const updatePlace = async (req, res, next)=>{
 
      //validation result shown according to rules define in routes module
     const errors = validationResult(req);
@@ -113,18 +121,26 @@ const updatePlace = (req, res, next)=>{
     const { title, description } = req.body;
     const placeId = req.params.pid;
 
-    const updatedPlace = {...DUMMY_PLACES.find(p=>p.id === placeId)};
-    //store index of current place in placeIndex
-    const placeIndex = DUMMY_PLACES.findIndex(p =>p.id === placeId);
+    let place;
+    try {
+        place = await Place.findById(placeId);
+    } catch (err) {
+        const error = new HttpError('Creating place failed, please try again',500);
+         return next(error);
+    }
 
-    //this insert the new coming data from form to copy of latest data when id matched
-    updatedPlace.title = title;
-    updatedPlace.description = description;
+    //when data id matched then go to that ID data and change title,discription with new title , desc
+    place.title = title;
+    place.description = description;
 
-    //update the place in Demo data which we passed at updatedPlace
-    DUMMY_PLACES[placeIndex] = updatedPlace;
+   try {
+        await place.save();
+   } catch (err) {
+       const error = new HttpError('Something went gone, could not update place', 500);
+       return next(error);
+   }
 
-    res.status(200).json({place:updatedPlace});
+    res.status(200).json({place: place.toObject({ getters:true }) });
 
 };
 

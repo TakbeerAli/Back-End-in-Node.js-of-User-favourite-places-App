@@ -33,7 +33,7 @@ app.use((error,req,res,next)=> {
 })
 
 // connecteing application with database
-mongoose.connect('mongodb+srv://ali:alikhan123@cluster0.op4vg.mongodb.net/places?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://ali:alikhan123@cluster0.op4vg.mongodb.net/places?retryWrites=true&w=majority', {useNewUrlParser: true, useUnifiedTopology: true})
 .then(() => {
     app.listen(5000);
 })

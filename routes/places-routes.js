@@ -16,7 +16,6 @@ router.get('/user/:uid', placeControllers.getPlacesbyUserId);
 
 //this api is for to post data
 router.post('/',
-
 //alidtion on post request from express-validator library
 [
  check('title').not().isEmpty(),
@@ -25,9 +24,9 @@ router.post('/',
 ],
  placeControllers.createPlace);   
 
+ 
 //this api is for to update places
 router.patch('/:pid',
-
 //validation rules
 [
     check('title').not().isEmpty(),
