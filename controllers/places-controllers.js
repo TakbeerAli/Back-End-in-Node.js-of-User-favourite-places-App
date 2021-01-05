@@ -145,15 +145,25 @@ const updatePlace = async (req, res, next)=>{
 };
 
 //api method for to delet place
-const deletPlace = (req, res, next) => {
+const deletPlace = async (req, res, next) => {
     const placeId = req.params.pid;
 
-    //if there is no data then show no data found how can i delete if no data
-    if(!DUMMY_PLACES.find(p => p.id === placeId)){
-        throw new HttpError('Data is not found',404);
+    let place;
+    //first recgognized which place need to delet
+    try {
+        place = await Place.findById(placeId);
+    } catch (err) {
+        const error = new HttpError('Something went gone, could not be deleted', 500);
+        return next(error);
     }
 
-    DUMMY_PLACES = DUMMY_PLACES.filter(p => p.id !== placeId);
+ // then it delete that place
+    try {
+        await place.remove();
+    } catch (err) {
+        const error = new HttpError('Something went gone, could not delet place', 500);
+        return next(error);
+    }
     res.status(200).json({message:"place is deleted"});
 };
 
