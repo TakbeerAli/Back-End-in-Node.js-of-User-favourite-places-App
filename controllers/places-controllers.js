@@ -23,7 +23,7 @@ let DUMMY_PLACES = [
     }
 ];
 
-// this is part of search by place id and called in routes placeId route
+// this is part of search by place id and called in routes placeId route  ++ THIS IS GETPLACEBYID ROUTE
 const getPlacebyId = async (req,res,next) =>{
     const placeId = req.params.pid;
    
@@ -45,7 +45,7 @@ const getPlacebyId = async (req,res,next) =>{
 };
 
 
-// this is part of search by user id and called in routes userId route
+// this is part of search by user id and called in routes userId route ++ GETUSERBYID ROUTE
 const getPlacesbyUserId = async (req,res,next) =>{
     const userId = req.params.uid;
     
@@ -66,7 +66,8 @@ const getPlacesbyUserId = async (req,res,next) =>{
     res.json({places: places.map(place => place.toObject({ getter: true })) });  // returning data in json form
 };
 
-// post method  async is for google api but we did't use bcz no money 
+
+// post method  async is for google api but we did't use bcz no money   ++      THIS IS CREATEPLACE ROUTE
 const createPlace = async (req,res,next) =>{
 
     //validation result shown according to rules define in routes module
@@ -86,8 +87,7 @@ const createPlace = async (req,res,next) =>{
         return next(error);
     }
 
-
-    //coming data from form and orgainzating according to schema
+    //coming data from form and orgainzating according to schema 
     const createPlace = new Place({
         title,
         description,
@@ -131,7 +131,8 @@ const createPlace = async (req,res,next) =>{
     res.status(201).json({place: createPlace});
 };
 
-// api method for update
+
+// api method for update    ++                                 THIS IS UPDATE ROUTE
 const updatePlace = async (req, res, next)=>{
 
      //validation result shown according to rules define in routes module
@@ -166,22 +167,34 @@ const updatePlace = async (req, res, next)=>{
 
 };
 
-//api method for to delet place
+
+//api method for to delet place                       ++ THIS IS DELET ROUTE
 const deletPlace = async (req, res, next) => {
     const placeId = req.params.pid;
 
     let place;
     //first recgognized which place need to delet
     try {
-        place = await Place.findById(placeId);
+        place = await Place.findById(placeId).populate('creator');  // populate work only when we have relation btw ( ref: place)
     } catch (err) {
         const error = new HttpError('Something went gone, could not be deleted', 500);
         return next(error);
     }
 
+    //check is this Id have place or not
+    if(!place){
+        const error = new HttpError('Could not find place for this Id', 404);
+        return next(error);
+    }
+
  // then it delete that place
     try {
-        await place.remove();
+         const sess = await mongoose.startSession();
+         sess.startTransaction();
+         await place.remove({ session: sess }); // remove that place
+         place.creator.places.pull(place);  //go to place then that place creator then that user places then delete that place
+         await place.creator.save({ session: sess }); // save 
+         await sess.commitTransaction(); // finlly save permenantly
     } catch (err) {
         const error = new HttpError('Something went gone, could not delet place', 500);
         return next(error);
