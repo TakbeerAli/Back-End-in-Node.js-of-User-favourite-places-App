@@ -8,20 +8,7 @@ const  User = require('../models/user');
 const mongoose = require('mongoose')
 
 
-//dummy data
-let DUMMY_PLACES = [
-    {
-        id:'p1',
-        title:'Empire state buildings',
-        description: 'one of the greate ',
-        location:{
-            lat:40.999999,
-            lng:-73.33333
-        },
-        address: '20 W 34th st, New York,Ny 10001',
-        creator:'u1'
-    }
-];
+
 
 // this is part of search by place id and called in routes placeId route  ++ THIS IS GETPLACEBYID ROUTE
 const getPlacebyId = async (req,res,next) =>{
@@ -49,21 +36,22 @@ const getPlacebyId = async (req,res,next) =>{
 const getPlacesbyUserId = async (req,res,next) =>{
     const userId = req.params.uid;
     
-
-    let places;
+   //let places;
+   let userWithPlaces;
     try {
-     places = await Place.find({ creator: userId });
+        userWithPlaces = await User.findById(userId).populate('places'); // we can also do with simple but we used populate method
     } catch (err) {
         const error = new HttpError('could not find place by id ',500);
         return next(error);
     }
       
-    if(!places || places.length === 0){
+    //if(!places || places.length ===0){};
+    if(!userWithPlaces || userWithPlaces.places.length === 0){
       const error = new HttpError('Could not found by user Id',404);
       return next(error);
     }
 
-    res.json({places: places.map(place => place.toObject({ getter: true })) });  // returning data in json form
+    res.json({places: userWithPlaces.places.map(place => place.toObject({ getter: true })) });  // returning data in json form
 };
 
 

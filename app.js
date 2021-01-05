@@ -26,7 +26,7 @@ app.use((error,req,res,next)=> {
     if(res.headerSent){
         return next(error);
     }
-    
+     
     // these error.code is comming from error route where it defined & message also
     res.status(error.code || 500 )
     res.json({message: error.message || 'An unknown error occured'});
