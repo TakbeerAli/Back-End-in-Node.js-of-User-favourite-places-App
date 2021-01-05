@@ -13,7 +13,8 @@ const PlaceSchema = new Schema ({
          lat: { type: Number, require: true },
          lng: { type: Number, require: true },
      },
-     creator: { type: String, require: true }
+     // making realtion with User Shema
+     creator: { type: mongoose.Types.ObjectId, require:true, ref: 'User' }
 
 });
 

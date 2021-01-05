@@ -39,7 +39,7 @@ const signup = async (req, res, next) => {
         return next(error);
     }
 
-    const { name, email, password,places } = req.body;
+    const { name, email, password } = req.body;
 
 
     let existinguser;
@@ -62,7 +62,7 @@ const signup = async (req, res, next) => {
         email,
         image: 'https://picsum.photos/200/300',
         password,
-        places
+        places:[]
     });
 
     //saving data to database

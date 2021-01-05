@@ -4,7 +4,8 @@ const {  validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
 const getCoordsForAddress =require('../util/location');
 const Place = require('../models/place');
-
+const  User = require('../models/user');
+const mongoose = require('mongoose')
 
 
 //dummy data
@@ -85,6 +86,7 @@ const createPlace = async (req,res,next) =>{
         return next(error);
     }
 
+
     //coming data from form and orgainzating according to schema
     const createPlace = new Place({
         title,
@@ -95,9 +97,29 @@ const createPlace = async (req,res,next) =>{
         creator
     });
 
+    let user;
+    try {
+        //check for the user if creator user id exsist or not
+          user = await User.findById(creator);
+    } catch (err) {
+        const error = new HttpError('Creating place failed ,please try again',500);
+        return next(error);   
+    }
+
+    // if user creator id doesn't exist 
+    if(!user){
+        const error = new HttpError('Could not find user for provided id', 404);
+        return next(error);
+    }
+
     // saving data to database
     try {
-       await createPlace.save();
+        const sess = await mongoose.startSession(); //session check is all uper method Ok there is no error 
+        sess.startTransaction();  // here we start trasaction saveing one by one things
+        await createPlace.save({ session: sess });  // first we save place in DB
+        user.places.push(createPlace);  // then we insert place to specifiec User  to relat place with them
+        await user.save({ session: sess });  // then we save user detail + insert place for this user
+        await sess.commitTransaction(); // at least when all process complet without error then trasaction save all data other wise it remove
     } catch (err) {
          const error = new HttpError('Creating place failed, please try again',500);
          return next(error)

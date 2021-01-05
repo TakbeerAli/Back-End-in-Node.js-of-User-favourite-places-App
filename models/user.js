@@ -8,7 +8,8 @@ const userShema = new Schema({
     email: { type: String, require:true, unique:true },
     password: { type: String, require: true, minlength: 6},
     image: { type: String, require: true },
-    places : { type: String, require:true }
+    //making relation of this with place with Place Schema to one to many
+    places : [{ type: mongoose.Types.ObjectId, require:true, ref: 'Place' }]
 });
 
 userShema.plugin(uniqueValidator);
