@@ -1,6 +1,7 @@
 const { uuid } = require('uuidv4');
 const HttpError = require('../models/http-error');
 const { validationResult } = require('express-validator');
+const User =  require('../models/user');
 
 // dummy data for users
 const DUMMY_USER =[ {
@@ -19,36 +20,56 @@ const getUsers = (req, res, next) => {
 };
 
 
-// route method for to signup user to database
-const signup = (req, res, next) => {
+// route method for to signup user to database ++  This is SIGNUP ROUTE SETTING
+const signup = async (req, res, next) => {
     //validation result shown according to rules define in routes module
     const errors = validationResult(req);
     
     //if validation is according to rules mean wrong then run IF block
     if(!errors.isEmpty()){
-        throw new HttpError('Invalid inputs passed, please check your data',422);  
+        const error = new  HttpError('Invalid inputs passed, please check your data',422);  
+        return next(error);
     }
 
-    const { name, email, password } = req.body;
+    const { name, email, password,places } = req.body;
 
-    const hasUser = DUMMY_USER.find(u => u.email === email);
-    if(hasUser){
-        throw new HttpError('email already exist', 422);
+
+    let existinguser;
+    try {
+        //this type of matching method id moongoose method
+        existinguser = await User.findOne({ email: email });
+    } catch (err) {
+        const error = new HttpError('Signup failed , please try again ', 500);
+        return next(error);
+    }
+
+    if (existinguser) {
+        const error = new HttpError('User already exist ,pleas login ',422);
+        return next(error);
     };
 
-    const createdUser = {
-        id:uuid(),
-        name,  // this automatically know that put name in (  name : name )
+    // creating record in database
+    const createdUser = new User({
+        name,
         email,
-        password
+        image: 'https://picsum.photos/200/300',
+        password,
+        places
+    });
+
+    //saving data to database
+    try {
+       await createdUser.save();
+    } catch (err) {
+         const error = new HttpError('Creating user failed, please try again',500);
+         return next(error)
     };
 
-    DUMMY_USER.push(createdUser);
-    res.status(201).json({user: createdUser});
+    res.status(201).json({user: createdUser.toObject({ getters: true })});
 };
 
 
-//route method for to login user and check if credential is correct or not
+//route method for to login user and check if credential is correct or not ++ THIS IS LOGIN ROUTE SETTING
 const login = (req, res, next) => {
 
     const { email, password } = req.body;
