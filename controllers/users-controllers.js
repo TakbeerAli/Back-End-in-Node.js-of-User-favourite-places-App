@@ -36,7 +36,7 @@ const signup = async (req, res, next) => {
 
     let existinguser;
     try {
-        //this type of matching method id moongoose method
+        //this type of matching method id moongoose 
         existinguser = await User.findOne({ email: email });
     } catch (err) {
         const error = new HttpError('Signup failed , please try again ', 500);
@@ -70,15 +70,23 @@ const signup = async (req, res, next) => {
 
 
 //route method for to login user and check if credential is correct or not ++ THIS IS LOGIN ROUTE SETTING
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const identifiedUser = DUMMY_USER.find(u => u.email === email);
+    let existinguser;
+    try {
+        //this type of matching method id moongoose  simple method is changed from this 
+        existinguser = await User.findOne({ email: email });
+    } catch (err) {
+        const error = new HttpError('login failed , please try again ', 500);
+        return next(error);
+    }
 
-    if(!identifiedUser || identifiedUser.password !== password){
+    if(!existinguser || existinguser.password !== password){
 
-        throw new HttpError('your provided email or password is wrong!',401);
+      const error = new HttpError('your provided email or password is wrong!',401);
+      return next(error);
     }
      res.json({message:'loged in '});
 };

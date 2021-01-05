@@ -22,7 +22,7 @@ router.post('/singup',
 ,userControllers.signup);  
 
 // api for to get place by creator Id
-router.get('/login',userControllers.login );
+router.post('/login',userControllers.login);
 
  
 
