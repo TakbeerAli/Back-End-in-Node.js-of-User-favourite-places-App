@@ -13,9 +13,17 @@ const DUMMY_USER =[ {
 ];
 
 //route method for return all users
-const getUsers = (req, res, next) => {
+const getUsers = async (req, res, next) => {
 
-    res.json({users: DUMMY_USER});
+    let users;
+    try {
+         users = await User.find({},'-password');
+    } catch (err) {
+       const error = new HttpError('fetching error , please try again', 500);  
+       return next(error);      
+    }
+
+  res.json({ users: users.map(user => user.toObject({ getters: true }))});
 
 };
 
