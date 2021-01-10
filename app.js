@@ -10,6 +10,7 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use((req, res, next) =>{
+    
     // this is for to off CROC error in front-end which we get due to sending form 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader(

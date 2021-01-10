@@ -89,7 +89,7 @@ const login = async (req, res, next) => {
       const error = new HttpError('your provided email or password is wrong!',401);
       return next(error);
     }
-     res.json({message:'loged in '});
+     res.json({message:'loged in,', user: existinguser.toObject({getters: true })});
 };
 
 
